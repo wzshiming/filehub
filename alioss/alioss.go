@@ -17,6 +17,7 @@ type AliOss struct {
 	acl oss.ACL
 }
 
+// alioss://{accessKeyId}:{accessKeySecret}@{bucket}.{Region}[-internal].aliyuncs.com
 func NewAliOss(remote string) (filehub.Filehub, error) {
 	u, err := url.Parse(remote)
 	if err != nil {
