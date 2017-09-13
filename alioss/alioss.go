@@ -44,9 +44,9 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 }
 
 func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
-
 	buc := a.cli.Bucket(a.buc)
-	list, err := buc.List("", path, "", 0)
+
+	list, err := buc.List(path, "/", "", 1000)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +56,14 @@ func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
 			key:     v,
 			filehub: a,
 		})
+	}
+
+	for _, v := range list.CommonPrefixes {
+		fs0, err := a.List(v)
+		if err != nil {
+			return nil, err
+		}
+		fs = append(fs, fs0...)
 	}
 
 	return fs, nil
