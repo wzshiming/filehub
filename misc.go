@@ -3,28 +3,65 @@ package filehub
 import (
 	"fmt"
 	"sort"
-	"time"
+
+	"github.com/wzshiming/ffmt"
+	"github.com/wzshiming/fork"
 )
 
-// Copy 移动dst 没有或者不是最新的 到src中查找
-func Copy(dst, src Filehub) error {
+type CopyType uint32
+
+const (
+	None    = CopyType(0)
+	_       = CopyType(1 << (32 - iota - 1))
+	Create  // 如果源有目标没有的文件则在目标创建文件
+	Replace // 如果源比目标新或目标就替换目标的文件
+	Delete  // 如果目标有源没有的文件则删除目标的文件
+)
+
+func (c CopyType) Exists(ct CopyType) bool {
+	return c&ct == ct
+}
+
+// Copy
+func Copy(dst, src Filehub, ct CopyType, forkSize int) error {
+	if ct == None {
+		return nil
+	}
 	dds, err := DiffHub(dst, src)
 	if err != nil {
 		return err
 	}
 
+	f := fork.NewFork(forkSize)
+
 	for _, v := range dds {
-		if v.Src != nil {
-			if v.Dst == nil || v.Src.ModTime().Add(time.Second).After(v.Dst.ModTime()) {
-				p := v.Src.Path()
-				d, t, err := src.Get(p)
-				if err != nil {
-					return err
+		func(v *DiffInfo) {
+			f.Push(func() {
+				if v.Src != nil {
+					if (v.Dst == nil && ct.Exists(Create)) ||
+						(v.Src.ModTime().After(v.Dst.ModTime()) && ct.Exists(Replace)) {
+						p := v.Src.Path()
+						d, t, err := src.Get(p)
+						if err != nil {
+							ffmt.Mark(err)
+							return
+						}
+						dst.Put(p, d, t)
+					}
+				} else {
+					if ct.Exists(Delete) {
+						err := dst.Del(v.Dst.Path())
+						if err != nil {
+							ffmt.Mark(err)
+							return
+						}
+					}
 				}
-				dst.Put(p, d, t)
-			}
-		}
+			})
+
+		}(v)
 	}
+	f.Join()
 
 	return nil
 }
