@@ -121,7 +121,7 @@ func DiffHub(dst, src Filehub, path string) ([]*DiffInfo, error) {
 	return Diff(fd, fs), nil
 }
 
-// Diff 比较文件名差异
+// Diff 排序后比较文件名差异
 func Diff(fd, fs []FileInfo) (dds []*DiffInfo) {
 	sort.SliceStable(fd, func(i, j int) bool {
 		return fd[i].Path() < fd[j].Path()
@@ -133,29 +133,25 @@ func Diff(fd, fs []FileInfo) (dds []*DiffInfo) {
 	si := 0
 	di := 0
 
-loop:
-	for ; di != len(fd); di++ {
-		for {
-			if si == len(fs) {
-				break loop
-			}
-			vd := fd[di]
-			vs := fs[si]
-			if vd.Path() < vs.Path() {
-				vs = nil
-			} else if vd.Path() > vs.Path() {
-				vd = nil
-			}
-			dds = append(dds, &DiffInfo{
-				Dst: vd,
-				Src: vs,
-			})
-			if vs != nil {
-				si++
-			}
-			if vd != nil {
-				continue loop
-			}
+	for di != len(fd) && si != len(fs) {
+		vd := fd[di]
+		vs := fs[si]
+		vdp := vd.Path()
+		vsp := vs.Path()
+		if vdp < vsp {
+			vs = nil
+		} else if vdp > vsp {
+			vd = nil
+		}
+		dds = append(dds, &DiffInfo{
+			Dst: vd,
+			Src: vs,
+		})
+		if vs != nil {
+			si++
+		}
+		if vd != nil {
+			di++
 		}
 	}
 
@@ -183,5 +179,5 @@ type DiffInfo struct {
 }
 
 func (d *DiffInfo) String() string {
-	return fmt.Sprintf("%v >=< %v", d.Dst, d.Src)
+	return fmt.Sprintf("%v =:= %v", d.Dst, d.Src)
 }
