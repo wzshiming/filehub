@@ -11,11 +11,11 @@ import (
 type CopyType uint32
 
 const (
-	None    = CopyType(0)
-	_       = CopyType(1 << (32 - iota - 1))
-	Create  // 如果源有目标没有的文件则在目标创建文件
-	Replace // 如果源比目标新或目标就替换目标的文件
-	Delete  // 如果目标有源没有的文件则删除目标的文件
+	None    CopyType = 0
+	_       CopyType = 1 << (32 - iota - 1)
+	Create           // 如果源有目标没有的文件则在目标创建文件
+	Replace          // 如果源比目标新就替换目标的文件
+	Delete           // 如果目标有源没有的文件则删除目标的文件
 )
 
 func (c CopyType) Exists(ct CopyType) bool {
@@ -23,57 +23,97 @@ func (c CopyType) Exists(ct CopyType) bool {
 }
 
 // Copy
-func Copy(dst, src Filehub, ct CopyType, forkSize int) error {
+func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 	if ct == None {
 		return nil
 	}
-	dds, err := DiffHub(dst, src)
+
+	dds, err := DiffHub(dst, src, path)
 	if err != nil {
 		return err
 	}
 
 	f := fork.NewFork(forkSize)
 
-	for _, v := range dds {
-		func(v *DiffInfo) {
-			f.Push(func() {
-				if v.Src != nil {
-					if (v.Dst == nil && ct.Exists(Create)) ||
-						(v.Src.ModTime().After(v.Dst.ModTime()) && ct.Exists(Replace)) {
-						p := v.Src.Path()
-						d, t, err := src.Get(p)
-						if err != nil {
-							ffmt.Mark(err)
-							return
-						}
-						dst.Put(p, d, t)
+	// 如果源有目标没有的文件则在目标创建文件
+	if ct.Exists(Create) {
+		for _, v := range dds {
+			vsrc := v.Src
+			vdst := v.Dst
+			if vsrc != nil && vdst == nil {
+				f.Push(func() {
+					p := vsrc.Path()
+					d, t, err := src.Get(p)
+					if err != nil {
+						ffmt.Mark(err)
+						return
 					}
-				} else {
-					if ct.Exists(Delete) {
-						err := dst.Del(v.Dst.Path())
-						if err != nil {
-							ffmt.Mark(err)
-							return
-						}
-					}
-				}
-			})
 
-		}(v)
+					err = dst.Put(p, d, t)
+					if err != nil {
+						ffmt.Mark(err)
+						return
+					}
+				})
+			}
+		}
 	}
+
+	// 如果源比目标新就替换目标的文件
+	if ct.Exists(Replace) {
+		for _, v := range dds {
+			vsrc := v.Src
+			vdst := v.Dst
+			if vsrc != nil && vdst != nil &&
+				vsrc.ModTime().After(vdst.ModTime()) {
+				f.Push(func() {
+					p := vsrc.Path()
+					d, t, err := src.Get(p)
+					if err != nil {
+						ffmt.Mark(err)
+						return
+					}
+
+					err = dst.Put(p, d, t)
+					if err != nil {
+						ffmt.Mark(err)
+						return
+					}
+				})
+			}
+		}
+	}
+
+	// 如果目标有源没有的文件则删除目标的文件
+	if ct.Exists(Delete) {
+		for _, v := range dds {
+			vsrc := v.Src
+			vdst := v.Dst
+			if vsrc == nil && vdst != nil {
+				f.Push(func() {
+					err := dst.Del(vdst.Path())
+					if err != nil {
+						ffmt.Mark(err)
+						return
+					}
+				})
+			}
+		}
+	}
+
 	f.Join()
 
 	return nil
 }
 
 // DiffHub 比较
-func DiffHub(dst, src Filehub) ([]*DiffInfo, error) {
-	fd, err := dst.List("")
+func DiffHub(dst, src Filehub, path string) ([]*DiffInfo, error) {
+	fd, err := dst.List(path)
 	if err != nil {
 		return nil, err
 	}
 
-	fs, err := src.List("")
+	fs, err := src.List(path)
 	if err != nil {
 		return nil, err
 	}
@@ -143,5 +183,5 @@ type DiffInfo struct {
 }
 
 func (d *DiffInfo) String() string {
-	return fmt.Sprintf("%v -=- %v", d.Dst, d.Src)
+	return fmt.Sprintf("%v >=< %v", d.Dst, d.Src)
 }

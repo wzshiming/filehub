@@ -12,6 +12,7 @@ import (
 
 type File string
 
+// file:///{path} or ./{path}
 func NewFile(root string) (filehub.Filehub, error) {
 	return File(root), nil
 }
@@ -27,6 +28,11 @@ func (f File) List(path string) (fs []filehub.FileInfo, err error) {
 		if err != nil {
 			return err
 		}
+
+		if info == nil {
+			return nil
+		}
+
 		if info.IsDir() {
 			return nil
 		}
