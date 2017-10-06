@@ -12,7 +12,6 @@ import (
 )
 
 type AliOss struct {
-	cli *oss.Client
 	buc *oss.Bucket
 }
 
@@ -46,8 +45,8 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &AliOss{
-		cli: cli,
 		buc: buc,
 	}, nil
 }
