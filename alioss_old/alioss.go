@@ -46,7 +46,6 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 
 func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
 	buc := a.cli.Bucket(a.buc)
-
 	list, err := buc.List(path, "/", "", 1000)
 	if err != nil {
 		return nil, err
