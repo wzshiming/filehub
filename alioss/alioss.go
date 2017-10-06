@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"mime"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -93,6 +95,8 @@ func (a *AliOss) Get(path string) (data []byte, contType string, err error) {
 		return nil, "", err
 	}
 	defer resp.Close()
+
+	contType = mime.TypeByExtension(filepath.Ext(path))
 	return
 }
 
