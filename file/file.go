@@ -70,7 +70,7 @@ func (f File) Exists(path string) (exists bool, err error) {
 	rp := f.RelPath(path)
 	stat, err := os.Stat(rp)
 	if err != nil {
-		return true, err
+		return false, err
 	}
 	return stat != nil, nil
 }
