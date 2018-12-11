@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/wzshiming/filehub"
 )
@@ -51,6 +52,16 @@ func (f File) List(path string) (fs []filehub.FileInfo, err error) {
 }
 
 func (f File) Put(path string, data []byte, contType string) (err error) {
+	rp := f.RelPath(path)
+	err = os.MkdirAll(filepath.Dir(rp), os.ModePerm)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(rp, data, os.ModePerm)
+}
+
+func (f File) PutExpire(path string, data []byte, contType string, dur time.Duration) (err error) {
+	// TODO 设置过期
 	rp := f.RelPath(path)
 	err = os.MkdirAll(filepath.Dir(rp), os.ModePerm)
 	if err != nil {

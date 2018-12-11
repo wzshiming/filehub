@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/wzshiming/filehub"
@@ -82,6 +83,14 @@ func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
 
 func (a *AliOss) Put(path string, data []byte, contType string) (err error) {
 	return a.buc.PutObject(path, bytes.NewReader(data))
+}
+
+func (a *AliOss) PutExpire(path string, data []byte, contType string, dur time.Duration) (err error) {
+	signUrl, err := a.buc.SignURL(path, oss.HTTPPut, dur/time.Second)
+	if err != nil {
+		return err
+	}
+	return a.buc.PutObjectWithURL(signUrl, bytes.NewReader(data))
 }
 
 func (a *AliOss) Get(path string) (data []byte, contType string, err error) {
