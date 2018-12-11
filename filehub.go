@@ -19,5 +19,6 @@ type Filehub interface {
 	Exists(path string) (exists bool, err error)
 	Get(path string) (data []byte, contType string, err error)
 	Put(path string, data []byte, contType string) (err error)
+	PutExpire(path string, data []byte, conType string, expire time.Duration) (err error)
 	Del(path string) error
 }
