@@ -81,16 +81,16 @@ func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
 	return fs, nil
 }
 
-func (a *AliOss) Put(path string, data []byte, contType string) (err error) {
-	return a.buc.PutObject(path, bytes.NewReader(data))
+func (a *AliOss) Put(path string, data []byte, contType string) (p string, err error) {
+	return path, a.buc.PutObject(path, bytes.NewReader(data))
 }
 
-func (a *AliOss) PutExpire(path string, data []byte, contType string, dur time.Duration) (err error) {
-	signUrl, err := a.buc.SignURL(path, oss.HTTPPut, dur/time.Second)
+func (a *AliOss) PutExpire(path string, data []byte, contType string, dur time.Duration) (p string, err error) {
+	signUrl, err := a.buc.SignURL(path, oss.HTTPPut, int64(dur/time.Second))
 	if err != nil {
-		return err
+		return "", err
 	}
-	return a.buc.PutObjectWithURL(signUrl, bytes.NewReader(data))
+	return signUrl, a.buc.PutObjectWithURL(signUrl, bytes.NewReader(data))
 }
 
 func (a *AliOss) Get(path string) (data []byte, contType string, err error) {

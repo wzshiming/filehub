@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"gopkg.in/wzshiming/fork.v2"
 	"gopkg.in/ffmt.v1"
+	"gopkg.in/wzshiming/fork.v2"
 )
 
 type CopyType uint32
@@ -49,7 +49,7 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 						return
 					}
 
-					err = dst.Put(p, d, t)
+					p, err = dst.Put(p, d, t)
 					if err != nil {
 						ffmt.Mark(err)
 						return
@@ -74,7 +74,7 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 						return
 					}
 
-					err = dst.Put(p, d, t)
+					p, err = dst.Put(p, d, t)
 					if err != nil {
 						ffmt.Mark(err)
 						return

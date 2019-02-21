@@ -51,23 +51,18 @@ func (f File) List(path string) (fs []filehub.FileInfo, err error) {
 	return
 }
 
-func (f File) Put(path string, data []byte, contType string) (err error) {
+func (f File) Put(path string, data []byte, contType string) (p string, err error) {
 	rp := f.RelPath(path)
 	err = os.MkdirAll(filepath.Dir(rp), os.ModePerm)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return ioutil.WriteFile(rp, data, os.ModePerm)
+	return path, ioutil.WriteFile(rp, data, os.ModePerm)
 }
 
-func (f File) PutExpire(path string, data []byte, contType string, dur time.Duration) (err error) {
+func (f File) PutExpire(path string, data []byte, contType string, dur time.Duration) (p string, err error) {
 	// TODO 设置过期
-	rp := f.RelPath(path)
-	err = os.MkdirAll(filepath.Dir(rp), os.ModePerm)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(rp, data, os.ModePerm)
+	return f.Put(path, data, contType)
 }
 
 func (f File) Get(path string) (data []byte, contType string, err error) {
