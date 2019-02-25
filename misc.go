@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"gopkg.in/ffmt.v1"
-	"gopkg.in/wzshiming/fork.v2"
+	"github.com/wzshiming/fork"
+	ffmt "gopkg.in/ffmt.v1"
 )
 
 type CopyType uint32
