@@ -3,6 +3,7 @@ package filehub
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type CopyType uint32
@@ -20,12 +21,12 @@ func (c CopyType) Exists(ct CopyType) bool {
 }
 
 // Copy
-func Copy(dst, src Filehub, path string, ct CopyType) error {
+func Copy(dist, src Filehub, path string, ct CopyType) error {
 	if ct == None {
 		return nil
 	}
 
-	dds, err := DiffHub(dst, src, path)
+	dds, err := DiffHub(dist, src, path)
 	if err != nil {
 		return err
 	}
@@ -39,14 +40,19 @@ func Copy(dst, src Filehub, path string, ct CopyType) error {
 			vdst := v.Dst
 			if vsrc != nil && vdst == nil {
 				p := vsrc.Path()
+				if strings.HasSuffix(p, "/") {
+					continue
+				}
 				d, t, err := src.Get(p)
 				if err != nil {
+					err = fmt.Errorf("filehub:Copy:Create:src.Get %s %s", p, err.Error())
 					errs = append(errs, err)
 					continue
 				}
 
-				p, err = dst.Put(p, d, t)
+				p, err = dist.Put(p, d, t)
 				if err != nil {
+					err = fmt.Errorf("filehub:Copy:Create:dist.Put %s %s", p, err.Error())
 					errs = append(errs, err)
 					continue
 				}
@@ -64,12 +70,14 @@ func Copy(dst, src Filehub, path string, ct CopyType) error {
 				p := vsrc.Path()
 				d, t, err := src.Get(p)
 				if err != nil {
+					err = fmt.Errorf("filehub:Copy:Replace:src.Get %s %s", p, err.Error())
 					errs = append(errs, err)
 					continue
 				}
 
-				p, err = dst.Put(p, d, t)
+				p, err = dist.Put(p, d, t)
 				if err != nil {
+					err = fmt.Errorf("filehub:Copy:Replace:dist.Put %s %s", p, err.Error())
 					errs = append(errs, err)
 					continue
 				}
@@ -83,8 +91,10 @@ func Copy(dst, src Filehub, path string, ct CopyType) error {
 			vsrc := v.Src
 			vdst := v.Dst
 			if vsrc == nil && vdst != nil {
-				err := dst.Del(vdst.Path())
+				p := vdst.Path()
+				err := dist.Del(p)
 				if err != nil {
+					err = fmt.Errorf("filehub:Copy:Replace:dist.Del %s %s", p, err.Error())
 					errs = append(errs, err)
 					continue
 				}
