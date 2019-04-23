@@ -3,9 +3,6 @@ package filehub
 import (
 	"fmt"
 	"sort"
-
-	"github.com/wzshiming/fork"
-	ffmt "gopkg.in/ffmt.v1"
 )
 
 type CopyType uint32
@@ -23,7 +20,7 @@ func (c CopyType) Exists(ct CopyType) bool {
 }
 
 // Copy
-func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
+func Copy(dst, src Filehub, path string, ct CopyType) error {
 	if ct == None {
 		return nil
 	}
@@ -33,7 +30,7 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 		return err
 	}
 
-	f := fork.NewFork(forkSize)
+	var errs errors
 
 	// 如果源有目标没有的文件则在目标创建文件
 	if ct.Exists(Create) {
@@ -41,20 +38,18 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 			vsrc := v.Src
 			vdst := v.Dst
 			if vsrc != nil && vdst == nil {
-				f.Push(func() {
-					p := vsrc.Path()
-					d, t, err := src.Get(p)
-					if err != nil {
-						ffmt.Mark(err)
-						return
-					}
+				p := vsrc.Path()
+				d, t, err := src.Get(p)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
 
-					p, err = dst.Put(p, d, t)
-					if err != nil {
-						ffmt.Mark(err)
-						return
-					}
-				})
+				p, err = dst.Put(p, d, t)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
 			}
 		}
 	}
@@ -66,20 +61,18 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 			vdst := v.Dst
 			if vsrc != nil && vdst != nil &&
 				vsrc.ModTime().After(vdst.ModTime()) {
-				f.Push(func() {
-					p := vsrc.Path()
-					d, t, err := src.Get(p)
-					if err != nil {
-						ffmt.Mark(err)
-						return
-					}
+				p := vsrc.Path()
+				d, t, err := src.Get(p)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
 
-					p, err = dst.Put(p, d, t)
-					if err != nil {
-						ffmt.Mark(err)
-						return
-					}
-				})
+				p, err = dst.Put(p, d, t)
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
 			}
 		}
 	}
@@ -90,18 +83,18 @@ func Copy(dst, src Filehub, path string, ct CopyType, forkSize int) error {
 			vsrc := v.Src
 			vdst := v.Dst
 			if vsrc == nil && vdst != nil {
-				f.Push(func() {
-					err := dst.Del(vdst.Path())
-					if err != nil {
-						ffmt.Mark(err)
-						return
-					}
-				})
+				err := dst.Del(vdst.Path())
+				if err != nil {
+					errs = append(errs, err)
+					continue
+				}
 			}
 		}
 	}
 
-	f.Join()
+	if len(errs) != 0 {
+		return errs
+	}
 
 	return nil
 }
