@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"mime"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,7 +16,8 @@ import (
 )
 
 type AliOss struct {
-	buc *oss.Bucket
+	buc  *oss.Bucket
+	path string
 }
 
 // alioss://{accessKeyId}:{accessKeySecret}@{bucket}.{endpoint}
@@ -50,13 +52,15 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 	}
 
 	return &AliOss{
-		buc: buc,
+		buc:  buc,
+		path: u.Path,
 	}, nil
 }
 
-func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
+func (a *AliOss) List(pat string) (fs []filehub.FileInfo, err error) {
 	marker := oss.Marker("")
-	pre := oss.Prefix(path)
+	pat = path.Join(a.path, pat)
+	pre := oss.Prefix(pat)
 	maxkey := oss.MaxKeys(1000)
 	for {
 		lsRes, err := a.buc.ListObjects(pre, maxkey, marker)
@@ -81,20 +85,23 @@ func (a *AliOss) List(path string) (fs []filehub.FileInfo, err error) {
 	return fs, nil
 }
 
-func (a *AliOss) Put(path string, data []byte, contType string) (p string, err error) {
-	return path, a.buc.PutObject(path, bytes.NewReader(data))
+func (a *AliOss) Put(pat string, data []byte, contType string) (p string, err error) {
+	pat = path.Join(a.path, pat)
+	return pat, a.buc.PutObject(pat, bytes.NewReader(data))
 }
 
-func (a *AliOss) PutExpire(path string, data []byte, contType string, dur time.Duration) (p string, err error) {
-	signUrl, err := a.buc.SignURL(path, oss.HTTPPut, int64(dur/time.Second))
+func (a *AliOss) PutExpire(pat string, data []byte, contType string, dur time.Duration) (p string, err error) {
+	pat = path.Join(a.path, pat)
+	signUrl, err := a.buc.SignURL(pat, oss.HTTPPut, int64(dur/time.Second))
 	if err != nil {
 		return "", err
 	}
 	return signUrl, a.buc.PutObjectWithURL(signUrl, bytes.NewReader(data))
 }
 
-func (a *AliOss) Get(path string) (data []byte, contType string, err error) {
-	resp, err := a.buc.GetObject(path)
+func (a *AliOss) Get(pat string) (data []byte, contType string, err error) {
+	pat = path.Join(a.path, pat)
+	resp, err := a.buc.GetObject(pat)
 	if err != nil {
 		return nil, "", err
 	}
@@ -105,14 +112,16 @@ func (a *AliOss) Get(path string) (data []byte, contType string, err error) {
 	}
 	defer resp.Close()
 
-	contType = mime.TypeByExtension(filepath.Ext(path))
+	contType = mime.TypeByExtension(filepath.Ext(pat))
 	return
 }
 
-func (a *AliOss) Exists(path string) (exists bool, err error) {
-	return a.buc.IsObjectExist(path)
+func (a *AliOss) Exists(pat string) (exists bool, err error) {
+	pat = path.Join(a.path, pat)
+	return a.buc.IsObjectExist(pat)
 }
 
-func (a *AliOss) Del(path string) error {
-	return a.buc.DeleteObject(path)
+func (a *AliOss) Del(pat string) error {
+	pat = path.Join(a.path, pat)
+	return a.buc.DeleteObject(pat)
 }
