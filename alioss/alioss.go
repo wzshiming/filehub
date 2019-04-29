@@ -85,12 +85,12 @@ func (a *AliOss) List(pat string) (fs []filehub.FileInfo, err error) {
 	return fs, nil
 }
 
-func (a *AliOss) Put(pat string, data []byte, contType string) (p string, err error) {
+func (a *AliOss) Put(pat string, data []byte, contentType string) (p string, err error) {
 	pat = path.Join(a.path, pat)
 	return pat, a.buc.PutObject(pat, bytes.NewReader(data))
 }
 
-func (a *AliOss) PutExpire(pat string, data []byte, contType string, dur time.Duration) (p string, err error) {
+func (a *AliOss) PutExpire(pat string, data []byte, contentType string, dur time.Duration) (p string, err error) {
 	pat = path.Join(a.path, pat)
 	signUrl, err := a.buc.SignURL(pat, oss.HTTPPut, int64(dur/time.Second))
 	if err != nil {
@@ -99,7 +99,7 @@ func (a *AliOss) PutExpire(pat string, data []byte, contType string, dur time.Du
 	return signUrl, a.buc.PutObjectWithURL(signUrl, bytes.NewReader(data))
 }
 
-func (a *AliOss) Get(pat string) (data []byte, contType string, err error) {
+func (a *AliOss) Get(pat string) (data []byte, contentType string, err error) {
 	pat = path.Join(a.path, pat)
 	resp, err := a.buc.GetObject(pat)
 	if err != nil {
@@ -112,7 +112,7 @@ func (a *AliOss) Get(pat string) (data []byte, contType string, err error) {
 	}
 	defer resp.Close()
 
-	contType = mime.TypeByExtension(filepath.Ext(pat))
+	contentType = mime.TypeByExtension(filepath.Ext(pat))
 	return
 }
 
