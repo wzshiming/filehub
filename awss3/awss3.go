@@ -37,11 +37,11 @@ func NewAwsS3(remote string) (*AwsS3, error) {
 	}
 	region := strings.TrimSuffix(strings.TrimPrefix(u.Host, "s3."), ".amazonaws.com")
 	bucket := ""
-	path := ""
+	bpath := ""
 	bucketAndPath := strings.SplitN(strings.TrimPrefix(u.Path, "/"), "/", 2)
 	bucket = bucketAndPath[0]
 	if len(bucketAndPath) > 1 {
-		path = bucketAndPath[1]
+		bpath = bucketAndPath[1]
 	}
 
 	config := &aws.Config{
@@ -54,11 +54,13 @@ func NewAwsS3(remote string) (*AwsS3, error) {
 	}
 
 	svc := s3.New(sess)
+	bpath = path.Clean(bpath)
+	pat := path.Join(bucket, bpath)
 	return &AwsS3{
-		prefix: `https://` + u.Host + "/" + strings.TrimSuffix(bucket+"/"+path, "/"),
+		prefix: `https://` + u.Host + "/" + pat,
 		s3:     svc,
 		bucket: bucket,
-		path:   path,
+		path:   bpath,
 	}, nil
 }
 
