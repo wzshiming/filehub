@@ -17,6 +17,7 @@ import (
 
 type AwsS3 struct {
 	s3     *s3.S3
+	prefix string
 	bucket string
 	path   string
 }
@@ -54,6 +55,7 @@ func NewAwsS3(remote string) (*AwsS3, error) {
 
 	svc := s3.New(sess)
 	return &AwsS3{
+		prefix: `https://` + u.Host + "/" + bucket,
 		s3:     svc,
 		bucket: bucket,
 		path:   path,
@@ -164,4 +166,8 @@ func (a *AwsS3) Del(pat string) error {
 		return err
 	}
 	return nil
+}
+
+func (a *AwsS3) Prefix() (string, error) {
+	return a.prefix, nil
 }

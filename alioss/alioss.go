@@ -16,8 +16,9 @@ import (
 )
 
 type AliOss struct {
-	buc  *oss.Bucket
-	path string
+	buc    *oss.Bucket
+	prefix string
+	path   string
 }
 
 // alioss://{accessKeyId}:{accessKeySecret}@{bucket}.{endpoint}
@@ -52,8 +53,9 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 	}
 
 	return &AliOss{
-		buc:  buc,
-		path: u.Path,
+		prefix: `https://` + u.Host,
+		buc:    buc,
+		path:   u.Path,
 	}, nil
 }
 
@@ -124,4 +126,8 @@ func (a *AliOss) Exists(pat string) (exists bool, err error) {
 func (a *AliOss) Del(pat string) error {
 	pat = path.Join(a.path, pat)
 	return a.buc.DeleteObject(pat)
+}
+
+func (a *AliOss) Prefix() (string, error) {
+	return a.prefix, nil
 }

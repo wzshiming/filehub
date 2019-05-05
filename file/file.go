@@ -85,3 +85,7 @@ func (f File) Del(path string) error {
 	rp := f.RelPath(path)
 	return os.Remove(rp)
 }
+
+func (f File) Prefix() (string, error) {
+	return string(f), nil
+}
