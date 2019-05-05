@@ -53,7 +53,7 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 	}
 
 	return &AliOss{
-		prefix: `https://` + u.Host,
+		prefix: `https://` + u.Host + u.Path,
 		buc:    buc,
 		path:   strings.TrimPrefix(u.Path, "/"),
 	}, nil

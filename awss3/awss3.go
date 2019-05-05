@@ -55,7 +55,7 @@ func NewAwsS3(remote string) (*AwsS3, error) {
 
 	svc := s3.New(sess)
 	return &AwsS3{
-		prefix: `https://` + u.Host + "/" + bucket,
+		prefix: `https://` + u.Host + "/" + strings.TrimSuffix(bucket+"/"+path, "/"),
 		s3:     svc,
 		bucket: bucket,
 		path:   path,
