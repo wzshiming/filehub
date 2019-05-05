@@ -53,6 +53,7 @@ func NewAliOss(remote string) (filehub.Filehub, error) {
 	}
 
 	pat := path.Clean(u.Path)
+	pat = strings.TrimPrefix(pat, "/")
 	return &AliOss{
 		prefix: `https://` + u.Host + "/" + pat,
 		buc:    buc,
